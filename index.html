@@ -567,10 +567,7 @@ async function deleteCustom(id, e) {
   if (!confirm('이 항목을 삭제할까요?')) return;
   showLoading();
   try {
-    await fetch(GAS_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'delete', id }),
-    });
+    await fetch(GAS_URL + '?action=delete&id=' + id);
     hideLoading(); showToast('삭제됐어요!');
     loadCustomFromServer();
   } catch(err) {
@@ -595,10 +592,7 @@ async function saveNew() {
   };
   closeModal(); showLoading();
   try {
-    await fetch(GAS_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'add', data }),
-    });
+    await fetch(GAS_URL + '?action=add&data=' + encodeURIComponent(JSON.stringify(data)));
     hideLoading(); showToast('추가됐어요! 🎉');
     ['f-title','f-presenter','f-date','f-url'].forEach(id => document.getElementById(id).value = '');
     loadCustomFromServer();
