@@ -344,6 +344,9 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// ── GAS API URL — 아래에 본인 GAS 배포 URL 입력 ───────────────
+const GAS_URL = 'https://jina-kim9015.github.io/sci-video/';
+
 // ── 데이터 ────────────────────────────────────────────────────
 const TRAVEL = [
   {num:1, title:"사라지는 빙하, 우리가 마주한 진짜 기후 위기", presenter:"WMO 수자원국장 김휘린", tag:"지구과학", url:"https://www.youtube.com/watch?v=MVrpZ2fL_gY&list=PLkKcqR2KGxgzqeKZo1Rx93kJFokuVkpye&index=21"},
@@ -446,7 +449,7 @@ const KBS = [
   {num:8, title:"대륙 전쟁: 알프레트 베게너", tag:"지구과학", date:"2026.3.21.", url:"https://www.youtube.com/watch?v=RJoCgv3b_lQ&list=PLk1KtKgGi_E6anYgQp2YbIHXtOE1dBkfF&index=3"},
 ];
 
-const PL_URL = "https://www.youtube.com/watch?v=4XX3E1KNwNw&list=PLkKcqR2KGxgzqeKZo1Rx93kJFokuVkpye";
+const PL_URL = 'https://www.youtube.com/watch?v=4XX3E1KNwNw&list=PLkKcqR2KGxgzqeKZo1Rx93kJFokuVkpye';
 
 // ── 카드 렌더링 ───────────────────────────────────────────────
 function makeCard(v, usePlaylist) {
@@ -548,29 +551,38 @@ function renderCustom(videos) {
   applyFilters();
 }
 
-// ── GAS 통신 ─────────────────────────────────────────────────
-function loadCustomFromServer() {
-  google.script.run
-    .withSuccessHandler(videos => renderCustom(videos))
-    .withFailureHandler(err => console.error('불러오기 실패:', err))
-    .getCustomVideos();
+// ── GAS fetch 통신 ────────────────────────────────────────────
+async function loadCustomFromServer() {
+  try {
+    const res = await fetch(GAS_URL + '?action=list');
+    const videos = await res.json();
+    renderCustom(videos);
+  } catch(e) {
+    console.error('불러오기 실패:', e);
+  }
 }
 
-function deleteCustom(id, e) {
+async function deleteCustom(id, e) {
   e.stopPropagation();
   if (!confirm('이 항목을 삭제할까요?')) return;
   showLoading();
-  google.script.run
-    .withSuccessHandler(() => { hideLoading(); showToast('삭제됐어요!'); loadCustomFromServer(); })
-    .withFailureHandler(err => { hideLoading(); alert('삭제 실패: ' + err.message); })
-    .deleteVideo(id);
+  try {
+    await fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'delete', id }),
+    });
+    hideLoading(); showToast('삭제됐어요!');
+    loadCustomFromServer();
+  } catch(err) {
+    hideLoading(); alert('삭제 실패: ' + err.message);
+  }
 }
 
 function openModal() { document.getElementById('addModal').classList.add('open'); }
 function closeModal() { document.getElementById('addModal').classList.remove('open'); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
-function saveNew() {
+async function saveNew() {
   const title = document.getElementById('f-title').value.trim();
   if (!title) { alert('제목을 입력해주세요.'); return; }
   const data = {
@@ -581,16 +593,18 @@ function saveNew() {
     date:      document.getElementById('f-date').value.trim(),
     url:       document.getElementById('f-url').value.trim() || null,
   };
-  closeModal();
-  showLoading();
-  google.script.run
-    .withSuccessHandler(() => {
-      hideLoading(); showToast('추가됐어요! 🎉');
-      ['f-title','f-presenter','f-date','f-url'].forEach(id => document.getElementById(id).value = '');
-      loadCustomFromServer();
-    })
-    .withFailureHandler(err => { hideLoading(); alert('저장 실패: ' + err.message); })
-    .addVideo(data);
+  closeModal(); showLoading();
+  try {
+    await fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'add', data }),
+    });
+    hideLoading(); showToast('추가됐어요! 🎉');
+    ['f-title','f-presenter','f-date','f-url'].forEach(id => document.getElementById(id).value = '');
+    loadCustomFromServer();
+  } catch(err) {
+    hideLoading(); alert('저장 실패: ' + err.message);
+  }
 }
 
 function showLoading() { document.getElementById('loadingOverlay').style.display = 'flex'; }
