@@ -575,7 +575,13 @@ async function deleteCustom(id, e) {
   }
 }
 
-function openModal() { document.getElementById('addModal').classList.add('open'); }
+const ADMIN_PW = '3156';
+function openModal() {
+  const pw = prompt('비밀번호를 입력하세요');
+  if (pw === null) return;
+  if (pw !== ADMIN_PW) { alert('비밀번호가 틀렸습니다.'); return; }
+  document.getElementById('addModal').classList.add('open');
+}
 function closeModal() { document.getElementById('addModal').classList.remove('open'); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
