@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>과학 동영상 포털</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2129;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --accent: #ff3c3c;
+    --tag-math: #f78166;
+    --tag-physics: #79c0ff;
+    --tag-chem: #ffa657;
+    --tag-bio: #7ce38b;
+    --tag-earth: #56d364;
+    --tag-info: #d2a8ff;
+    --tag-etc: #e3b341;
+    --series-travel: #ff6b35;
+    --series-science: #4facfe;
+    --series-kbs: #a855f7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; min-height: 100vh; }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 32px;
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon { width: 34px; height: 34px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .logo-text { font-weight: 700; font-size: 17px; color: var(--text); }
+  .header-right { margin-left: auto; }
+  .search-box {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 14px; color: var(--text); font-size: 14px; font-family: inherit;
+    width: 240px; outline: none; transition: border-color 0.2s;
+  }
+  .search-box:focus { border-color: var(--accent); }
+  .search-box::placeholder { color: var(--text-muted); }
+
+  .filter-bar {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 10px 32px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+  }
+  .filter-label { font-size: 12px; color: var(--text-muted); font-weight: 500; margin-right: 4px; }
+  .filter-btn {
+    border: 1px solid var(--border); border-radius: 20px; padding: 5px 14px;
+    font-size: 13px; font-family: inherit; font-weight: 500; cursor: pointer;
+    transition: all 0.2s; background: var(--surface2); color: var(--text-muted);
+  }
+  .filter-btn:hover { border-color: #484f58; color: var(--text); }
+  .filter-btn.active { color: #fff; border-color: transparent; }
+  .filter-btn[data-filter="all"].active { background: #444; }
+  .filter-btn[data-filter="수학"].active { background: var(--tag-math); }
+  .filter-btn[data-filter="물리"].active { background: var(--tag-physics); color: #000; }
+  .filter-btn[data-filter="화학"].active { background: var(--tag-chem); color: #000; }
+  .filter-btn[data-filter="생명과학"].active { background: var(--tag-bio); color: #000; }
+  .filter-btn[data-filter="지구과학"].active { background: var(--tag-earth); color: #000; }
+  .filter-btn[data-filter="정보"].active { background: var(--tag-info); color: #000; }
+  .filter-btn[data-filter="기타"].active { background: var(--tag-etc); color: #000; }
+
+  .stats-bar { padding: 10px 32px; font-size: 13px; color: var(--text-muted); }
+  .stats-bar span { color: var(--text); font-weight: 600; }
+
+  main { padding: 24px 32px 60px; max-width: 1440px; margin: 0 auto; }
+
+  .series-section { margin-bottom: 48px; }
+  .series-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--border);
+  }
+  .series-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .series-title { font-size: 19px; font-weight: 700; letter-spacing: -0.3px; }
+  .series-link {
+    font-size: 12px; color: var(--text-muted); text-decoration: none;
+    display: flex; align-items: center; gap: 4px; transition: color 0.2s;
+  }
+  .series-link:hover { color: var(--accent); }
+  .series-count {
+    font-size: 12px; color: var(--text-muted);
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 2px 10px; margin-left: auto;
+  }
+
+  .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; }
+
+  .video-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px; display: flex; flex-direction: column; gap: 8px;
+    transition: border-color 0.15s, transform 0.15s;
+  }
+  .video-card.has-link { cursor: pointer; }
+  .video-card.has-link:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .video-card:not(.has-link):hover { border-color: #484f58; }
+
+  .card-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .card-num { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+  .card-tag {
+    display: inline-block; border-radius: 4px; padding: 2px 8px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.2px;
+  }
+  .tag-수학 { background: rgba(247,129,102,0.15); color: var(--tag-math); }
+  .tag-물리 { background: rgba(121,192,255,0.15); color: var(--tag-physics); }
+  .tag-화학 { background: rgba(255,166,87,0.15); color: var(--tag-chem); }
+  .tag-생명과학 { background: rgba(124,227,139,0.15); color: var(--tag-bio); }
+  .tag-지구과학 { background: rgba(86,211,100,0.15); color: var(--tag-earth); }
+  .tag-정보 { background: rgba(210,168,255,0.15); color: var(--tag-info); }
+  .tag-기타 { background: rgba(227,179,65,0.15); color: var(--tag-etc); }
+
+  .card-title { font-size: 14px; font-weight: 600; line-height: 1.5; }
+  .card-presenter { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+  .card-date { font-size: 11px; color: #484f58; }
+  .card-footer { margin-top: 2px; }
+  .btn-watch {
+    background: var(--accent); color: white; border: none; border-radius: 6px;
+    padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
+    font-family: inherit; text-decoration: none; display: inline-flex;
+    align-items: center; gap: 4px; transition: opacity 0.2s;
+  }
+  .btn-watch:hover { opacity: 0.85; }
+  .btn-playlist {
+    background: transparent; color: var(--text-muted); border: 1px solid var(--border);
+    border-radius: 6px; padding: 5px 11px; font-size: 12px; font-weight: 500; cursor: pointer;
+    font-family: inherit; text-decoration: none; display: inline-flex;
+    align-items: center; gap: 4px; transition: all 0.2s;
+  }
+  .btn-playlist:hover { border-color: #484f58; color: var(--text); }
+  .no-link-badge { font-size: 11px; color: #484f58; }
+
+  .video-card.hidden { display: none; }
+  .video-card.custom { border-style: dashed; }
+  .btn-delete {
+    margin-left: auto; background: none; border: none; color: #484f58;
+    cursor: pointer; font-size: 14px; padding: 2px 4px; line-height: 1;
+    transition: color 0.2s;
+  }
+  .btn-delete:hover { color: #f85149; }
+
+  /* FAB */
+  .fab {
+    position: fixed; bottom: 32px; right: 32px; z-index: 200;
+    width: 52px; height: 52px; border-radius: 50%;
+    background: var(--accent); color: white; border: none;
+    font-size: 26px; cursor: pointer; box-shadow: 0 4px 20px rgba(255,60,60,0.4);
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .fab:hover { transform: scale(1.1); box-shadow: 0 6px 28px rgba(255,60,60,0.55); }
+
+  /* Modal */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 300;
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 28px; width: 480px; max-width: calc(100vw - 32px);
+    max-height: 90vh; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .modal-title { font-size: 17px; font-weight: 700; }
+  .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-grid .full { grid-column: 1 / -1; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+  .field input, .field select {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 7px;
+    padding: 8px 12px; color: var(--text); font-size: 14px; font-family: inherit;
+    outline: none; transition: border-color 0.2s;
+  }
+  .field input:focus, .field select:focus { border-color: var(--accent); }
+  .field select option { background: var(--surface2); }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+  .btn-cancel {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 7px;
+    padding: 8px 18px; color: var(--text-muted); font-size: 14px;
+    font-family: inherit; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-cancel:hover { border-color: #484f58; color: var(--text); }
+  .btn-save {
+    background: var(--accent); border: none; border-radius: 7px;
+    padding: 8px 20px; color: white; font-size: 14px; font-weight: 600;
+    font-family: inherit; cursor: pointer; transition: opacity 0.2s;
+  }
+  .btn-save:hover { opacity: 0.85; }
+
+  @media (max-width: 600px) {
+    header, .filter-bar, .stats-bar, main { padding-left: 14px; padding-right: 14px; }
+    .search-box { width: 100%; }
+    .header-right { width: 100%; }
+    .video-grid { grid-template-columns: 1fr; }
+    .modal-grid { grid-template-columns: 1fr; }
+    .fab { bottom: 20px; right: 20px; }
+  }
+
+  .video-card.custom { border-style: dashed; }
+  .btn-delete {
+    margin-left: auto; background: none; border: none; color: #484f58;
+    cursor: pointer; font-size: 14px; padding: 2px 4px; line-height: 1;
+    transition: color 0.2s;
+  }
+  .btn-delete:hover { color: #f85149; }
+  .toast {
+    position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+    background: #238636; color: white; border-radius: 8px;
+    padding: 10px 20px; font-size: 14px; font-weight: 500;
+    z-index: 500; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+  .loading-overlay {
+    position: fixed; inset: 0; z-index: 400;
+    background: rgba(13,17,23,0.7); display: flex;
+    align-items: center; justify-content: center;
+    font-size: 15px; color: var(--text-muted);
+  }
+  .spinner {
+    width: 32px; height: 32px; border: 3px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 0.7s linear infinite; margin-right: 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🔬</div>
+    <span class="logo-text">과학 동영상 포털</span>
+  </div>
+  <div class="header-right">
+    <input type="text" class="search-box" id="searchInput" placeholder="제목, 강사명으로 검색...">
+  </div>
+</header>
+
+<div class="filter-bar">
+  <span class="filter-label">주제별 필터</span>
+  <button class="filter-btn active" data-filter="all">전체</button>
+  <button class="filter-btn" data-filter="수학">📐 수학</button>
+  <button class="filter-btn" data-filter="물리">⚛️ 물리</button>
+  <button class="filter-btn" data-filter="화학">🧪 화학</button>
+  <button class="filter-btn" data-filter="생명과학">🧬 생명과학</button>
+  <button class="filter-btn" data-filter="지구과학">🌍 지구과학</button>
+  <button class="filter-btn" data-filter="정보">💻 정보</button>
+  <button class="filter-btn" data-filter="기타">✨ 기타</button>
+</div>
+
+<div class="stats-bar">총 <span id="countVisible">0</span>개 동영상 표시 중</div>
+
+<main>
+  <section class="series-section">
+    <div class="series-header">
+      <div class="series-dot" style="background:var(--series-travel)"></div>
+      <span class="series-title">취미는 과학 여행</span>
+      <a class="series-link" href="https://www.youtube.com/playlist?list=PLkKcqR2KGxgzqeKZo1Rx93kJFokuVkpye" target="_blank">▶ 전체 플레이리스트</a>
+      <span class="series-count" id="count-travel">0개</span>
+    </div>
+    <div class="video-grid" id="grid-travel"></div>
+  </section>
+  <section class="series-section">
+    <div class="series-header">
+      <div class="series-dot" style="background:var(--series-science)"></div>
+      <span class="series-title">취미는 과학</span>
+      <a class="series-link" href="https://www.youtube.com/watch?v=4XX3E1KNwNw&list=PLkKcqR2KGxgzqeKZo1Rx93kJFokuVkpye" target="_blank">▶ 전체 플레이리스트</a>
+      <span class="series-count" id="count-science">0개</span>
+    </div>
+    <div class="video-grid" id="grid-science"></div>
+  </section>
+  <section class="series-section">
+    <div class="series-header">
+      <div class="series-dot" style="background:var(--series-kbs)"></div>
+      <span class="series-title">KBS 사이언스 워</span>
+      <span class="series-count" id="count-kbs">0개</span>
+    </div>
+    <div class="video-grid" id="grid-kbs"></div>
+  </section>
+</main>
+
+<button class="fab" onclick="openModal()" title="동영상 추가">＋</button>
+
+<div class="modal-overlay" id="addModal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-title">➕ 동영상 추가</div>
+    <div class="modal-grid">
+      <div class="field full">
+        <label>제목 *</label>
+        <input id="f-title" type="text" placeholder="동영상 제목">
+      </div>
+      <div class="field full">
+        <label>강사 / 출연자</label>
+        <input id="f-presenter" type="text" placeholder="예) 인하대 물리학과 교수 김범준">
+      </div>
+      <div class="field">
+        <label>시리즈</label>
+        <select id="f-series">
+          <option value="travel">취미는 과학 여행</option>
+          <option value="science" selected>취미는 과학</option>
+          <option value="kbs">KBS 사이언스 워</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>주제</label>
+        <select id="f-tag">
+          <option value="수학">📐 수학</option>
+          <option value="물리">⚛️ 물리</option>
+          <option value="화학">🧪 화학</option>
+          <option value="생명과학">🧬 생명과학</option>
+          <option value="지구과학" selected>🌍 지구과학</option>
+          <option value="정보">💻 정보</option>
+          <option value="기타">✨ 기타</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>방영일</label>
+        <input id="f-date" type="text" placeholder="예) 26.4.3.">
+      </div>
+      <div class="field full">
+        <label>YouTube 링크 (없으면 비워두세요)</label>
+        <input id="f-url" type="url" placeholder="https://www.youtube.com/...">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">취소</button>
+      <button class="btn-save" onclick="saveNew()">추가하기</button>
+    </div>
+  </div>
+</div>
+
+<div class="loading-overlay" id="loadingOverlay" style="display:none">
+  <div class="spinner"></div><span style="margin-left:8px">처리 중...</span>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── 데이터 ────────────────────────────────────────────────────
+const TRAVEL = [
+  {num:1, title:"사라지는 빙하, 우리가 마주한 진짜 기후 위기", presenter:"WMO 수자원국장 김휘린", tag:"지구과학", url:"https://www.youtube.com/watch?v=MVrpZ2fL_gY&list=PLkKcqR2KGxgzqeKZo1Rx93kJFokuVkpye&index=21"},
+  {num:2, title:"빙하가 녹을수록 위험해지는 수력 발전과 기후 이야기", presenter:"WMO 수자원국장 김휘린", tag:"지구과학", url:"https://www.youtube.com/watch?v=68TAXmHvttM&list=PLkKcqR2KGxgzqeKZo1Rx93kJFokuVkpye&index=19"},
+  {num:3, title:"동물들이 행복한 나라, 스위스의 동물 복지", presenter:"동물행동학자 장이권", tag:"생명과학", url:"https://www.youtube.com/watch?v=EXWOpPvZt2M&list=PLkKcqR2KGxgzqeKZo1Rx93kJFokuVkpye&index=17"},
+  {num:4, title:"눈과 입으로 즐기는 시계와 와인 속 과학", presenter:"성균관대 교수 이대한, 광운대 교수 장홍제", tag:"화학", url:"https://www.youtube.com/watch?v=WvjytveCcvk&list=PLkKcqR2KGxgzqeKZo1Rx93kJFokuVkpye&index=15"},
+  {num:5, title:"로봇공학자는 어떤 생각을 하며 살까?", presenter:"로봇공학자 데니스 홍", tag:"정보", url:"https://www.youtube.com/watch?v=g2aRe769JUw&list=PLkKcqR2KGxgzqeKZo1Rx93kJFokuVkpye&index=13"},
+  {num:6, title:"지질학의 교과서, 그랜드캐니언 현장학습", presenter:"지질학자 김기범", tag:"지구과학", url:"https://www.youtube.com/watch?v=5qtibrZLYFE&list=PLkKcqR2KGxgzqeKZo1Rx93kJFokuVkpye&index=11"},
+];
+
+const SCIENCE_PL = "https://www.youtube.com/watch?v=4XX3E1KNwNw&list=PLkKcqR2KGxgzqeKZo1Rx93kJFokuVkpye";
+const SCIENCE = [
+  {num:1, title:"외계인, 어떻게 맞이할 것인가?", presenter:"관측천문학자 현민희", tag:"지구과학", date:"24.10.4."},
+  {num:2, title:"시간, 왜 되돌릴 수 없나?", presenter:"인하대 물리학과 교수 김범준", tag:"물리", date:"24.10.11."},
+  {num:3, title:"공룡, 어떻게 지구를 주름잡았나?", presenter:"고생물학자 박진영, 작가 갈로아", tag:"지구과학", date:"24.10.18."},
+  {num:4, title:"노화, 우리는 왜 늙는가?", presenter:"한국생명공학연구원 김천아 박사, 작가 하리하라", tag:"생명과학", date:"24.10.25."},
+  {num:5, title:"디스토피아, 과학이 우리를 구원할까?", presenter:"광운대 화학과 교수 장홍제", tag:"기타", date:"24.11.1."},
+  {num:6, title:"불안, 내가 문제인가? 뇌가 문제인가?", presenter:"광운대 화학과 교수 장홍제", tag:"생명과학", date:"24.11.8."},
+  {num:7, title:"자연지능, 왜 인공지능을 만드나?", presenter:"카이스트 뇌인지과학과 교수 백세범", tag:"정보", date:"24.11.15."},
+  {num:8, title:"유사 과학, 어디까지 과학인가?", presenter:"한양대 철학과 교수 이상욱", tag:"기타", date:"24.11.22."},
+  {num:9, title:"곤충, 세상에 왜 이렇게 많을까?", presenter:"작가 갈로아", tag:"생명과학", date:"24.11.29."},
+  {num:10, title:"삼엽충, 5억 년 전 한반도는 어떻게 생겼나?", presenter:"지질학자 최덕근", tag:"지구과학", date:"24.12.6."},
+  {num:11, title:"미생물, 어디까지 들어봤니?", presenter:"연세대 생물학과 교수 김응빈", tag:"생명과학", date:"24.12.13."},
+  {num:12, title:"항생제, 인간은 패배하고 있는가?", presenter:"광운대 화학과 교수 장홍제", tag:"화학", date:"24.12.20."},
+  {num:13, title:"태양, 2025년에 정말 폭발할까?", presenter:"태양천문학 박사 김수진", tag:"지구과학", date:"24.12.27."},
+  {num:14, title:"수학, 1+1은 정말 2인가?", presenter:"고등과학원 수학부 교수 김상현", tag:"수학", date:"25.1.3."},
+  {num:15, title:"궁극의 배터리, 어디에서 찾을까?", presenter:"광운대 화학과 교수 장홍제", tag:"화학", date:"25.1.10."},
+  {num:16, title:"특수상대성 이론, 이번에는 이해할까?", presenter:"인하대 물리학과 교수 김범준", tag:"물리", date:"25.1.17."},
+  {num:17, title:"중력, 달은 왜 떨어지지 않는가?", presenter:"인하대 물리학과 교수 김범준", tag:"물리", date:"25.1.24."},
+  {num:18, title:"양자역학, 데뷔 무대는 어땠나?", presenter:"한양대 철학과 교수 이상욱", tag:"물리", date:"25.1.31."},
+  {num:19, title:"생명, 최초의 세포는 어떻게 나왔나?", presenter:"광운대 화학과 교수 장홍제", tag:"생명과학", date:"25.2.7."},
+  {num:20, title:"GLP-1, 어떻게 비만 치료제가 되었나?", presenter:"서울대 의과학과 교수 최형진", tag:"생명과학", date:"25.2.14."},
+  {num:21, title:"한국인, 우리는 기후 난민의 후예인가?", presenter:"서울대 지리학과 교수 박정재", tag:"지구과학", date:"25.2.21."},
+  {num:22, title:"독극물, 그 살인범은 어떻게 잡았을까?", presenter:"성균관대 과학수사학과 교수 정희선", tag:"화학", date:"25.2.28."},
+  {num:23, title:"암, 백신 맞으면 안 걸릴까?", presenter:"카이스트 의과학대학원 교수 신의철", tag:"생명과학", date:"25.3.7."},
+  {num:24, title:"AI 특이점, 5년 안에 온다고?", presenter:"부산대 교수 최정모, 한빛미디어 의장 박태웅", tag:"정보", date:"25.3.14."},
+  {num:25, title:"양자 컴퓨터, 도대체 뭘까?", presenter:"고려대 물리학과 교수 채은미", tag:"물리", date:"25.3.21."},
+  {num:26, title:"대멸종, 살 것인가, 사라질 것인가?", presenter:"국립과천과학관 관장 이정모", tag:"지구과학", date:"25.3.28."},
+  {num:27, title:"외계 문명, 방정식으로 찾아볼까?", presenter:"부산대 교수 최정모, SETI 연구소 박사 이명현", tag:"지구과학", date:"25.4.4."},
+  {num:28, title:"기생충, 왜 그렇게 사나?", presenter:"작가 갈로아, 기생생물 박사 이동민", tag:"생명과학", date:"25.4.11."},
+  {num:29, title:"제로 슈가, 정말 먹어도 될까?", presenter:"서울대 교수 최명환, 의사 겸 작가 우창윤", tag:"화학", date:"25.4.18."},
+  {num:30, title:"도파민, 이렇게 터져도 되나?", presenter:"뇌과학자 송민령", tag:"생명과학", date:"25.4.25."},
+  {num:31, title:"우주발사체, 200톤짜리를 어떻게 쏠까?", presenter:"한국항공우주연구원 박사 고정환", tag:"지구과학", date:"25.5.2."},
+  {num:32, title:"전기와 자기, 어떻게 하나가 되었나?", presenter:"KAIST 물리학과 교수 김갑진", tag:"물리", date:"25.5.9."},
+  {num:33, title:"죽음, 과학은 어디까지 아는가?", presenter:"법의학자 김문영", tag:"생명과학", date:"25.5.16."},
+  {num:34, title:"성 선택, 어떻게 짝을 찾을까?", presenter:"서울대 교수 최재천, 동아대 교수 임소연", tag:"생명과학", date:"25.5.23."},
+  {num:35, title:"미세플라스틱, 어디까지가 진실일까?", presenter:"해양학자 심원준", tag:"지구과학", date:"25.5.30."},
+  {num:36, title:"인간은 왜 이럴까?", presenter:"성균관대 교수 우충완", tag:"생명과학", date:"25.6.6."},
+  {num:37, title:"세상은 왜 이 모양일까?", presenter:"고등과학원 물리학자 박권", tag:"물리", date:"25.6.13."},
+  {num:38, title:"암흑 물질, 그 과학자는 왜 지하 1,000m로 내려갔나?", presenter:"기초과학연구원 박사 소중호", tag:"물리", date:"25.6.20."},
+  {num:39, title:"연금술, 어쩌다 화학이 되었나?", presenter:"응급의학과 의사 곽경훈", tag:"화학", date:"25.6.27."},
+  {num:40, title:"곤충, 어디까지 먹어봤니?", presenter:"작가 갈로아", tag:"생명과학", date:"25.7.4."},
+  {num:41, title:"합성생물학, 이 기술을 써도 되나요?", presenter:"연세대 생화학과 교수 송기원", tag:"생명과학", date:"25.7.11."},
+  {num:42, title:"요리, 과학은 무엇을 바꾸었나?", presenter:"셰프 권성준", tag:"화학", date:"25.7.18."},
+  {num:43, title:"빅뱅, 가장 오래된 이야기를 해볼까?", presenter:"우주론학자 정동희", tag:"지구과학", date:"25.7.25."},
+  {num:44, title:"푸앵카레의 추측, 100년의 난제는 어떻게 풀렸을까?", presenter:"고등과학원 수학부 교수 김상현", tag:"수학", date:"25.8.1."},
+  {num:45, title:"우주, 왜 국방의 요충지가 되었나?", presenter:"한양대 교수 채승병, 중령 오병훈", tag:"지구과학", date:"25.8.8."},
+  {num:46, title:"빙하, 어떻게 지구를 기억하는가?", presenter:"빙하학자 신진화", tag:"지구과학", date:"25.8.15."},
+  {num:47, title:"대지진, 일어나면 어떡하지?", presenter:"연세대 지구시스템과학과 교수 홍태경", tag:"지구과학", date:"25.8.22."},
+  {num:48, title:"호랑이, 왜 돌아오지 못할까?", presenter:"생물학자 임정은", tag:"생명과학", date:"25.9.5."},
+  {num:49, title:"원소, 주기율표를 알면 뭐가 좋아요?", presenter:"배우 윤소희", tag:"화학", date:"25.9.12."},
+  {num:50, title:"야구, 타격은 왜 과학인가?", presenter:"국민대 교수 이기광, 해설위원 박용택", tag:"물리", date:"25.9.19."},
+  {num:51, title:"탈모, 과학으로 어떻게 안 되나?", presenter:"연세대 의과대학 교수 오지원", tag:"생명과학", date:"25.9.26."},
+  {num:52, title:"핵폭탄, 어떻게 세상에 떨어졌나?", presenter:"한양대 교수 채승병", tag:"물리", date:"25.10.3."},
+  {num:53, title:"마이크로바이옴, 설마 똥이 답인가?", presenter:"포항공대 생명과학과 교수 고아라", tag:"생명과학", date:"25.10.10."},
+  {num:54, title:"통증, 내 고통을 어떻게 보여주지?", presenter:"성균관대 교수 우충완", tag:"생명과학", date:"25.10.17."},
+  {num:55, title:"천문, 무엇을 감추고 있나?", presenter:"천문학자 정민섭", tag:"지구과학", date:"25.10.24."},
+  {num:56, title:"예쁜꼬마선충, 왜 노벨상을 4개나 탔나?", presenter:"서울대 생명과학부 교수 이준호", tag:"생명과학", date:"25.10.31."},
+  {num:57, title:"나는 어떻게 자야 하나?", presenter:"KAIST 수리과학과 교수 김재경", tag:"생명과학", date:"25.11.7."},
+  {num:58, title:"탄소 중립, 진짜 '중립'할 수 있을까?", presenter:"서울대 환경대학원 교수 정수종", tag:"지구과학", date:"25.11.14."},
+  {num:59, title:"전자기파, 정체는 무엇인가?", presenter:"인하대 물리학과 교수 김범준", tag:"물리", date:"25.11.21."},
+  {num:60, title:"왜 단백질을 알아야 하죠?", presenter:"연세대 약학대학 교수 김성훈", tag:"생명과학", date:"25.11.28."},
+  {num:61, title:"화산, 진짜 터지면 어떡하지?", presenter:"부산대 지질환경과학과 교수 김기범", tag:"지구과학", date:"25.12.5."},
+  {num:62, title:"양자역학, 혁명은 어떻게 시작되었나?", presenter:"경희대 물리학과 교수 김상욱", tag:"물리", date:"25.12.12."},
+  {num:63, title:"양자역학, 두 세계는 어떻게 충돌했나?", presenter:"경희대 물리학과 교수 김상욱", tag:"물리", date:"25.12.19."},
+  {num:64, title:"슈뢰딩거의 고양이, 왜 유명한가?", presenter:"경희대 물리학과 교수 김상욱", tag:"물리", date:"25.12.26."},
+  {num:65, title:"의태, 자연은 왜 사기꾼을 키웠나?", presenter:"행동생태학자 강창구", tag:"생명과학", date:"26.1.2."},
+  {num:66, title:"유전, 내 머리는 누굴 닮았을까?", presenter:"다니엘", tag:"생명과학", date:"26.1.9."},
+  {num:67, title:"내 삶의 무엇을 담고 있나?", presenter:"숭실사이버대 교수 곽재식, 세종대 교수 우은진", tag:"기타", date:"26.1.16."},
+  {num:68, title:"블랙홀, 어떻게 우주 대스타가 됐나?", presenter:"숭실사이버대 교수 곽재식, 관측천문학자 김민진", tag:"지구과학", date:"26.1.23."},
+  {num:69, title:"후각, 내 뇌에 어떤 흔적을 남겼나?", presenter:"연세대 교수 김응빈, 뇌과학자 문제일", tag:"생명과학", date:"26.1.30."},
+  {num:70, title:"감기, 바이러스가 도대체 뭐길래?", presenter:"연세대 교수 김응빈, 의사 김우주", tag:"생명과학", date:"26.2.6."},
+  {num:71, title:"식물, 움직이지 않고 어떻게 싸우나?", presenter:"식물학자 김상규", tag:"생명과학", date:"26.2.13."},
+  {num:72, title:"오가노이드, 인공장기 어디까지 왔나?", presenter:"고려대 의과대학 교수 선웅", tag:"생명과학", date:"26.2.20."},
+  {num:73, title:"심해, 그 깊은 곳에 어떻게 생명이 사나?", presenter:"한국해양과학기술원 소장 김동성", tag:"지구과학", date:"26.2.27."},
+  {num:74, title:"암 전이를 막을 수 없나?", presenter:"연세대 생화학과 교수 박현우", tag:"생명과학", date:"26.3.6."},
+  {num:75, title:"핵융합, K-기술은 어떻게 판을 뒤집었나?", presenter:"한국핵융합에너지연구원 남용운", tag:"물리", date:"26.3.13."},
+  {num:76, title:"반도체, 왜 주식 시장을 뒤흔드나?", presenter:"KAIST 전기 및 전자공학부 교수 김정호", tag:"정보", date:"26.3.20."},
+  {num:77, title:"꿀벌, 왜 그렇게 열심히 꿀을 모으나?", presenter:"국립경국대 식물의학과 교수 정철의", tag:"생명과학", date:"26.3.27."},
+];
+
+const KBS = [
+  {num:1, title:"천문학의 지형을 바꾼 거인, 에드윈 허블의 전쟁", tag:"지구과학", date:"2026.1.29.", url:"https://www.youtube.com/watch?v=h0OcIcxGCsM&t=2610s"},
+  {num:2, title:"DNA 전쟁: 왓슨과 크릭", tag:"생명과학", date:"2026.2.5.", url:"https://www.youtube.com/watch?v=-Fo6UJz8sj0&list=PLk1KtKgGi_E6anYgQp2YbIHXtOE1dBkfF&index=29"},
+  {num:3, title:"핵전쟁: 오펜하이머 VS 하이젠베르크", tag:"물리", date:"2026.2.12.", url:"https://www.youtube.com/watch?v=c-tu1JesZc8&list=PLk1KtKgGi_E6anYgQp2YbIHXtOE1dBkfF&index=23"},
+  {num:4, title:"미생물 전쟁: 파스퇴르와 코흐", tag:"생명과학", date:"2026.2.19.", url:"https://www.youtube.com/watch?v=rZuYVIyNHm8&list=PLk1KtKgGi_E6anYgQp2YbIHXtOE1dBkfF&index=19"},
+  {num:5, title:"전기 전쟁: 에디슨 VS 테슬라", tag:"물리", date:"2026.2.28.", url:"https://www.youtube.com/watch?v=iI7O4HJHcwk&list=PLk1KtKgGi_E6anYgQp2YbIHXtOE1dBkfF&index=15"},
+  {num:6, title:"양자 전쟁: 아인슈타인 VS 닐스 보어", tag:"물리", date:"2026.3.7.", url:"https://www.youtube.com/watch?v=1L40_6tgAjQ&list=PLk1KtKgGi_E6anYgQp2YbIHXtOE1dBkfF&index=11"},
+  {num:7, title:"진화 전쟁", tag:"생명과학", date:"2026.3.14.", url:"https://www.youtube.com/watch?v=UZfNHEaUxls&list=PLk1KtKgGi_E6anYgQp2YbIHXtOE1dBkfF&index=7"},
+  {num:8, title:"대륙 전쟁: 알프레트 베게너", tag:"지구과학", date:"2026.3.21.", url:"https://www.youtube.com/watch?v=RJoCgv3b_lQ&list=PLk1KtKgGi_E6anYgQp2YbIHXtOE1dBkfF&index=3"},
+];
+
+const PL_URL = "https://www.youtube.com/watch?v=4XX3E1KNwNw&list=PLkKcqR2KGxgzqeKZo1Rx93kJFokuVkpye";
+
+// ── 카드 렌더링 ───────────────────────────────────────────────
+function makeCard(v, usePlaylist) {
+  const linked = !!v.url || usePlaylist;
+  const href = v.url || (usePlaylist ? PL_URL : null);
+  const div = document.createElement('div');
+  div.className = 'video-card' + (linked ? ' has-link' : '');
+  div.dataset.tag = v.tag;
+  div.dataset.search = (v.title + ' ' + (v.presenter || '')).toLowerCase();
+  if (linked) div.onclick = () => window.open(href, '_blank');
+  let btn = v.url
+    ? `<a class="btn-watch" href="${v.url}" target="_blank" onclick="event.stopPropagation()">▶ 시청하기</a>`
+    : usePlaylist
+      ? `<a class="btn-playlist" href="${PL_URL}" target="_blank" onclick="event.stopPropagation()">▶ 플레이리스트에서 보기</a>`
+      : `<span class="no-link-badge">링크 없음</span>`;
+  div.innerHTML =
+    `<div class="card-top">
+      <span class="card-num">#${String(v.num).padStart(2,'0')}</span>
+      <span class="card-tag tag-${v.tag}">${v.tag}</span>
+    </div>
+    <div class="card-title">${v.title}</div>
+    ${v.presenter ? `<div class="card-presenter">${v.presenter}</div>` : ''}
+    ${v.date ? `<div class="card-date">${v.date}</div>` : ''}
+    <div class="card-footer">${btn}</div>`;
+  return div;
+}
+
+function makeCustomCard(v) {
+  const linked = !!v.url;
+  const div = document.createElement('div');
+  div.className = 'video-card custom' + (linked ? ' has-link' : '');
+  div.dataset.tag = v.tag;
+  div.dataset.search = (v.title + ' ' + (v.presenter || '')).toLowerCase();
+  if (linked) div.onclick = (e) => { if (!e.target.closest('.btn-delete')) window.open(v.url, '_blank'); };
+  const btn = linked
+    ? `<a class="btn-watch" href="${v.url}" target="_blank" onclick="event.stopPropagation()">▶ 시청하기</a>`
+    : `<span class="no-link-badge">링크 없음</span>`;
+  div.innerHTML =
+    `<div class="card-top">
+      <span class="card-num">추가</span>
+      <span class="card-tag tag-${v.tag}">${v.tag}</span>
+      <button class="btn-delete" onclick="deleteCustom('${v.id}',event)">✕</button>
+    </div>
+    <div class="card-title">${v.title}</div>
+    ${v.presenter ? `<div class="card-presenter">${v.presenter}</div>` : ''}
+    ${v.date ? `<div class="card-date">${v.date}</div>` : ''}
+    <div class="card-footer">${btn}</div>`;
+  return div;
+}
+
+// ── 필터 & 검색 ───────────────────────────────────────────────
+let activeFilter = 'all', searchQ = '';
+
+function applyFilters() {
+  let total = 0;
+  document.querySelectorAll('.video-card').forEach(c => {
+    const show = (activeFilter === 'all' || c.dataset.tag === activeFilter)
+              && (!searchQ || c.dataset.search.includes(searchQ));
+    c.classList.toggle('hidden', !show);
+    if (show) total++;
+  });
+  document.getElementById('countVisible').textContent = total;
+  ['travel','science','kbs'].forEach(id => {
+    const g = document.getElementById('grid-' + id);
+    const n = g.querySelectorAll('.video-card:not(.hidden)').length;
+    document.getElementById('count-' + id).textContent = n + '개';
+    g.closest('.series-section').style.display = n === 0 ? 'none' : '';
+  });
+}
+
+document.querySelectorAll('.filter-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    activeFilter = b.dataset.filter;
+    applyFilters();
+  });
+});
+document.getElementById('searchInput').addEventListener('input', e => {
+  searchQ = e.target.value.toLowerCase();
+  applyFilters();
+});
+
+// ── 초기 렌더링 ───────────────────────────────────────────────
+function renderAll() {
+  TRAVEL.forEach(v => document.getElementById('grid-travel').appendChild(makeCard(v, false)));
+  SCIENCE.forEach(v => document.getElementById('grid-science').appendChild(makeCard(v, true)));
+  KBS.forEach(v => document.getElementById('grid-kbs').appendChild(makeCard(v, false)));
+  applyFilters();
+}
+
+function renderCustom(videos) {
+  document.querySelectorAll('.video-card.custom').forEach(c => c.remove());
+  const gridMap = { travel:'grid-travel', science:'grid-science', kbs:'grid-kbs' };
+  (videos || []).forEach(v => {
+    const grid = document.getElementById(gridMap[v.series] || 'grid-science');
+    if (grid) grid.appendChild(makeCustomCard(v));
+  });
+  applyFilters();
+}
+
+// ── GAS 통신 ─────────────────────────────────────────────────
+function loadCustomFromServer() {
+  google.script.run
+    .withSuccessHandler(videos => renderCustom(videos))
+    .withFailureHandler(err => console.error('불러오기 실패:', err))
+    .getCustomVideos();
+}
+
+function deleteCustom(id, e) {
+  e.stopPropagation();
+  if (!confirm('이 항목을 삭제할까요?')) return;
+  showLoading();
+  google.script.run
+    .withSuccessHandler(() => { hideLoading(); showToast('삭제됐어요!'); loadCustomFromServer(); })
+    .withFailureHandler(err => { hideLoading(); alert('삭제 실패: ' + err.message); })
+    .deleteVideo(id);
+}
+
+function openModal() { document.getElementById('addModal').classList.add('open'); }
+function closeModal() { document.getElementById('addModal').classList.remove('open'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+function saveNew() {
+  const title = document.getElementById('f-title').value.trim();
+  if (!title) { alert('제목을 입력해주세요.'); return; }
+  const data = {
+    series:    document.getElementById('f-series').value,
+    title,
+    presenter: document.getElementById('f-presenter').value.trim(),
+    tag:       document.getElementById('f-tag').value,
+    date:      document.getElementById('f-date').value.trim(),
+    url:       document.getElementById('f-url').value.trim() || null,
+  };
+  closeModal();
+  showLoading();
+  google.script.run
+    .withSuccessHandler(() => {
+      hideLoading(); showToast('추가됐어요! 🎉');
+      ['f-title','f-presenter','f-date','f-url'].forEach(id => document.getElementById(id).value = '');
+      loadCustomFromServer();
+    })
+    .withFailureHandler(err => { hideLoading(); alert('저장 실패: ' + err.message); })
+    .addVideo(data);
+}
+
+function showLoading() { document.getElementById('loadingOverlay').style.display = 'flex'; }
+function hideLoading() { document.getElementById('loadingOverlay').style.display = 'none'; }
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+renderAll();
+loadCustomFromServer();
+</script>
+</body>
+</html>
